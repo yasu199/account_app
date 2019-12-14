@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 // ユーザ認証のため、Authクラスをuse
 use Illuminate\Support\Facades\Auth;
+
+// 自作クラスの呼び出し
+use App\Library\Account_project;
 // 使用するテーブルのモデルを定義
 use App\Payment;
 use App\Genre;
@@ -36,7 +39,7 @@ class IndexPaymentController extends Controller
               $selected_month = $request->selected_month;
           }
           if (isset($request->sort_flag) === FALSE) {
-              $sort_flag = 1;
+              $sort_flag = Account_project::SORT_BY_DATE_FLAG;
           } else {
               $sort_flag = (int) $request->sort_flag;
           }
@@ -45,28 +48,24 @@ class IndexPaymentController extends Controller
           $tmp_year = array();
           $tmp_month = array();
           // 始まりの年は2018年から
-          $now_year = date('Y');
-          $now_year = (int) $now_year;
-          for ($i = 2018; $i <= ($now_year + 10); $i++) {
-              $tmp_year[] = (string) $i;
-          }
-          for ($i = 1; $i < 13; $i++) {
-              $tmp_month[] = sprintf('%02d', $i);
-          }
+          $now_year  = date('Y');
+          $now_year  = (int) $now_year;
+          $tmp_year  = Account_project::get_years_for_selected_by_users(2018, $now_year + 10);
+          $tmp_month = Account_project::get_months_for_selected_by_users();
 
           // すべてのジャンル名とidを取得
           $gerne_db = new Genre();
           $all_genres = $gerne_db->select('genre_id', 'genre_name')->get();
           // ソートフラグによって取得するデータの順番を決める。0→日付順,1→ジャンル別
           $payment_db = new Payment();
-          if ($sort_flag === 1) {
+          if ($sort_flag === Account_project::SORT_BY_DATE_FLAG) {
                 $payment_data = $payment_db
                                 ->select('payments.id', 'payments.target_month', 'genres.genre_id', 'genres.genre_name', 'payments.payment', 'payments.flag', 'payments.memo', 'genres.status')
                                 ->join('genres', 'payments.genre_id', '=', 'genres.genre_id')
                                 ->where([
                                     ['payments.user_id', '=', $user_id],
-                                    [DB::raw("DATE_FORMAT(payments.target_month, '%Y%m')"), '=', $selected_year . $selected_month]
                                 ])
+                                ->whereRaw("DATE_FORMAT(payments.target_month, '%Y%m') = ?", [$selected_year . $selected_month])
                                 ->orderBy('payments.target_month', 'asc')
                                 ->orderBy('payments.genre_id', 'asc')
                                 ->get();
@@ -76,8 +75,8 @@ class IndexPaymentController extends Controller
                                 ->join('genres', 'payments.genre_id', '=', 'genres.genre_id')
                                 ->where([
                                     ['payments.user_id', '=', $user_id],
-                                    [DB::raw("DATE_FORMAT(payments.target_month, '%Y%m')"), '=', $selected_year . $selected_month]
                                 ])
+                                ->whereRaw("DATE_FORMAT(payments.target_month, '%Y%m') = ?", [$selected_year . $selected_month])
                                 ->orderBy('payments.genre_id', 'asc')
                                 ->orderBy('payments.target_month', 'asc')
                                 ->get();
@@ -88,20 +87,22 @@ class IndexPaymentController extends Controller
 
       public function select_date(IndexPaymentDateRequest $request) {
           // 日にちを選択してもらい、それを渡す
-          $selected_year = $request->selected_year;
-          $selected_month = $request->selected_month;
-          $sort_flag = $request->sort_flag;
+          $selected_year       = $request->selected_year;
+          $selected_month      = $request->selected_month;
+          $sort_flag           = $request->sort_flag;
           $to_index_controller = array($selected_year, $selected_month, $sort_flag);
           return redirect()->action('IndexPaymentController@index', $to_index_controller);
       }
+
       public function sort(IndexPaymentSortRequest $request) {
           // ソートコードを受け取り、それを渡す
-          $selected_year = $request->selected_year;
-          $selected_month = $request->selected_month;
-          $sort_flag = $request->sort_flag;
+          $selected_year       = $request->selected_year;
+          $selected_month      = $request->selected_month;
+          $sort_flag           = $request->sort_flag;
           $to_index_controller = array($selected_year, $selected_month, $sort_flag);
           return redirect()->action('IndexPaymentController@index', $to_index_controller);
       }
+
       public function update_payment(IndexPaymentUpdateRequest $request) {
           // 更新作業する
           $payment_id     = $request->payment_id;
@@ -131,34 +132,35 @@ class IndexPaymentController extends Controller
                                 'memo' => $memo,
                                 'flag' => (int) $flag
                             ]);
-          if ($update_return === 1) {
-              $message = 'データを更新しました。';
-          } else {
-              $message = '対象の支払データが削除されている可能性があります。画面を更新し、データを確認してください。';
-          }
+
+          $update_message      = 'データを更新しました。';
+          $fail_update_message = '対象の支払データが削除されている可能性があります。画面を更新し、データを確認してください。';
+
+          $message = Account_project::decide_message_by_return($update_return, $update_message, $fail_update_message);
           // $messageをrequestへ保存
           $request->session()->flash('message', $message);
 
           $to_index_controller = array($payment_year, $payment_month, $sort_flag);
           return redirect()->action('IndexPaymentController@index', $to_index_controller);
       }
+
       public function delete_payment(IndexPaymentDeleteRequest $request) {
           // 削除する
-          $payment_id = $request->payment_id;
-          $selected_year = $request->selected_year;
+          $payment_id     = $request->payment_id;
+          $selected_year  = $request->selected_year;
           $selected_month = $request->selected_month;
-          $sort_flag = $request->sort_flag;
+          $sort_flag      = $request->sort_flag;
           // paymentを更新するためのインスタンス取得
           $payment_db = new Payment();
           $delete_return = $payment_db->where([
                               ['id', '=', (int) $payment_id]
                           ])
                           ->delete();
-          if ($delete_return === 1) {
-              $message = 'データを削除しました。';
-          } else {
-              $message = '対象の支払データはすでに削除されている可能性があります。画面を更新し、データを確認してください。';
-          }
+
+          $delete_message      = 'データを削除しました。';
+          $fail_delete_message = '対象の支払データはすでに削除されている可能性があります。画面を更新し、データを確認してください。';
+
+          $message = Account_project::decide_message_by_return($delete_return, $delete_message, $fail_delete_message);
           // $messageをrequestへ保存
           $request->session()->flash('message', $message);
           $to_index_controller = array($selected_year, $selected_month, $sort_flag);

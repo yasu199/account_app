@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 // ユーザ情報を取得するため
 use Illuminate\Support\Facades\Auth;
 
+// 自作クラスの呼び出し
+use App\Library\Account_project;
 // 使用するモデルの定義
 use App\Payment;
 use App\Genre;
@@ -36,57 +38,53 @@ class ComparePaymentController extends Controller
           $tmp_year = array();
           $tmp_month = array();
           // 始まりの年は2018年から
-          $now_year = date('Y');
-          $now_year = (int) $now_year;
-          for ($i = 2018; $i <= ($now_year + 10); $i++) {
-              $tmp_year[] = (string) $i;
-          }
-          for ($i = 1; $i < 13; $i++) {
-              $tmp_month[] = sprintf('%02d', $i);
-          }
-
+          $now_year  = date('Y');
+          $now_year  = (int) $now_year;
+          $tmp_year  = Account_project::get_years_for_selected_by_users(2018, $now_year + 10);
+          $tmp_month = Account_project::get_months_for_selected_by_users();
 
           // すべてのgenre_nameとIDを取得する
           $genre_db = new Genre();
           $all_genres = $genre_db->select('genre_id', 'genre_name', 'status')->get();
           // 各genre_idについて、予算、支払金額を取得
-          $budget_db = new Budget();
+          $budget_db  = new Budget();
           $payment_db = new Payment();
           // データ格納用の配列
-          $tmp_budget = array();
+          $tmp_budget  = array();
           $tmp_payment = array();
           foreach ($all_genres as $value) {
               $selected_date = $selected_year . $selected_month;
-              $genre_id = (int) $value->genre_id;
+              $genre_id      = (int) $value->genre_id;
+
               $tmp_budget[] = $budget_db->select('budget')
                           ->where([
-                              ['user_id', '=', $user_id],
-                              ['genre_id', '=', $genre_id],
+                              ['user_id',      '=', $user_id],
+                              ['genre_id',     '=', $genre_id],
                               ['target_month', '=', (int) $selected_date]
                           ])->get();
 
               $tmp_payment[] = $payment_db
-                          ->select(DB::raw("sum(payment) as payment, DATE_FORMAT(target_month, '%Y%m') as selected_date"))
+                          ->selectRaw("sum(payment) as payment, DATE_FORMAT(target_month, '%Y%m') as selected_date")
                           ->where([
                               ['genre_id', '=', $genre_id],
-                              ['user_id', '=', $user_id],
-                              ['flag', '=', 1],
-                              [DB::raw("DATE_FORMAT(target_month, '%Y%m')"), '=', $selected_date],
+                              ['user_id',  '=', $user_id],
+                              ['flag',     '=', Account_project::TO_DESIDE_USE_PAYMENT_FLAG],
                           ])
+                          ->whereRaw("DATE_FORMAT(target_month, '%Y%m') = ?", [$selected_date])
                           ->groupBy('selected_date')
                           ->get();
           }
           // budget,paymentについて、viewに渡すデータのゼロ埋めと、渡すデータの配列を取得
-          $budget = array();
-          $payment = array();
+          $budget     = array();
+          $payment    = array();
           $genre_name = array();
           foreach($all_genres as $value) {
-              $budget[] = 0;
+              $budget[]  = 0;
               $payment[] = 0;
               $genre_name[] = $value->genre_name;
           }
           // データがあるかないかでフラグ制御→なかった場合、view側でグラフ表示しない
-          $exit_budget = FALSE;
+          $exit_budget  = FALSE;
           $exit_payment = FALSE;
           // 取得したデータがあるか確認して、あれば配列に格納
           $i = 0;
@@ -126,7 +124,7 @@ class ComparePaymentController extends Controller
 
       // ユーザからの入力値を取得し、渡すためだけ関数
       public function search_compare_payment(ComparePaymentRequest $request) {
-          $selected_year = $request->selected_year;
+          $selected_year  = $request->selected_year;
           $selected_month = $request->selected_month;
 
           $to_page_view_controller = array($selected_year, $selected_month);
