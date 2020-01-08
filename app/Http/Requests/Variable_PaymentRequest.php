@@ -18,7 +18,7 @@ class Variable_PaymentRequest extends FormRequest
             'year' => 'date_format:Y|required',
             'month' => 'date_format:m|required',
             'day' => 'date_format:j|required',
-            'payment.*' => 'integer|between: 0, 100000000',
+            'payment.*' => 'nullable|integer|between: 0, 100000000',
             'memo.*' => 'max:10|inputMemo',
         ];
     }

@@ -13,7 +13,7 @@
 
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('welcome_page');
 
 Auth::routes();
 
@@ -25,7 +25,7 @@ Route::POST('month', 'BudgetController@month')->middleware('auth')->name('budget
 // 予算入力を実行したときのページ
 Route::POST('inp_budget', 'BudgetController@budget')->middleware('auth')->name('inp_budget');
 // 実績値の入力画面へ
-Route::get('variable_payment/{target_date?}', 'PaymentController@variable_index')->middleware('auth')->name('variable_payment');
+Route::get('variable_payment/{selected_date?}', 'PaymentController@variable_index')->middleware('auth')->name('variable_payment');
 Route::get('fixed_payment/{selected_year?}/{selected_month?}', 'PaymentController@fixed_index')->middleware('auth')->name('fixed_payment');
 // 実績値の入力画面へ
 Route::POST('inp_variable_payment', 'PaymentController@variable_payment')->middleware('auth')->name('inp_variable_payment');

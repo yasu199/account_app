@@ -48,8 +48,8 @@ class AnalyzePaymentController extends Controller
         $genre_db = new Genre();
         $genre_name = $genre_db->select('genre_id', 'genre_name', 'status')->get();
         // formに必要な月、年をセット
-        $tmp_year  = array();
-        $tmp_month = array();
+        $tmp_year  = [];
+        $tmp_month = [];
         // 始まりの年は2018年から
         $now_year  = date('Y');
         $now_year  = (int) $now_year;
@@ -62,10 +62,10 @@ class AnalyzePaymentController extends Controller
         $last_month  = Account_project::get_month($last_date);
 
         // チェックをされたgenre_idの支払いデータを取得する配列
-        $tmp_payment_data = array();
+        $tmp_payment_data = [];
         // チェック済みのジャンル名を取得する配列
-        $tmp_genre_name     = array();
-        $checked_genre_name = array();
+        $tmp_genre_name     = [];
+        $checked_genre_name = [];
         // チェックされたジャンルがあるとき、それぞれのジャンルについて、名前と支払いデータを取得
         if (count($checked_genre) !== 0) {
             $payment_db = new Payment();
@@ -96,12 +96,12 @@ class AnalyzePaymentController extends Controller
             }
 
             // 支払データについては、すべてのジャンルについて、月ごとにpayment = 0円で整地。
-            $payment_data = array();
+            $payment_data = [];
             foreach($checked_genre as $key => $value) {
                 for ($i = (int) $first_date; $i <= (int) $last_date; $i++) {
                     $tmp_date     = (string) $i;
                     $payment_date = Account_project::get_date_explode_slash($tmp_date);
-                    $payment_data[$key][] = array('genre_id' => $value, 'payment' => 0, 'selected_date' => $payment_date, 'genre_name' => $checked_genre_name[$key]);
+                    $payment_data[$key][] = ['genre_id' => $value, 'payment' => 0, 'selected_date' => $payment_date, 'genre_name' => $checked_genre_name[$key]];
                     // 月が12月のとき、次の年に移行させる
                     $i = Account_project::change_next_year($i);
                 }
@@ -124,17 +124,17 @@ class AnalyzePaymentController extends Controller
                             $n = $selected_year - $inp_year;
                             $h = $selected_month + ((12 * $n) - $inp_month);
                         }
-                        $payment_data[$i][$h] = array('genre_id' => $value->genre_id, 'payment' => (int) $value->payment, 'selected_date' => Account_project::get_date_explode_slash($value->selected_date), 'genre_name' => $checked_genre_name[$i]);
+                        $payment_data[$i][$h] = ['genre_id' => $value->genre_id, 'payment' => (int) $value->payment, 'selected_date' => Account_project::get_date_explode_slash($value->selected_date), 'genre_name' => $checked_genre_name[$i]];
                     }
                 }
                 $i++;
             }
         } else {
             // ユーザからジャンルの指定がなかった場合は、空の配列にする
-            $payment_data = array();
+            $payment_data = [];
         }
         // どのジャンルがチェック済みかを分かるように、view渡すため、チェック済み→１、チェックされていない→０で配列化
-        $checked_status = array();
+        $checked_status = [];
         foreach ($genre_name as $value) {
             $db_genre_id = $value->genre_id;
             $exit_flag = true;
@@ -173,7 +173,7 @@ class AnalyzePaymentController extends Controller
         $last_date  = $last_year . $last_month;
         // search_idをカンマ区切りの文字列に変換
         $checked_genre = Account_project::change_comma_string($search_id);
-        $to_page_view_controller = array($first_date, $last_date, $checked_genre);
+        $to_page_view_controller = [$first_date, $last_date, $checked_genre];
         return redirect()->action(
               'AnalyzePaymentController@page_view', $to_page_view_controller
           );

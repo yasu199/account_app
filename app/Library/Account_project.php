@@ -1,6 +1,7 @@
 <?php
 namespace App\Library;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class Account_project {
     // 支払データをAnalyzePayment、ComparePaymentで使用するか判断するflag
@@ -35,9 +36,19 @@ class Account_project {
     public static function get_month($date) {
         return substr($date, 4, 2);
     }
+    // 'YYYYmmdd'より'dd'のみ取得
+    public static function get_day($date) {
+        return substr($date, 6, 2);
+    }
+    // 月末日付を返す
+    public static function get_end_of_month(string $year, string $month) {
+        $date = $year . '-' . $month;
+        $day  = date('d', strtotime('last day of ' . $date));
+        return $day;
+    }
 
     // もしflagがtrueであれば加算して返す
-    public static function increase_only_true ($flag, $num) {
+    public static function increase_only_true (bool $flag, int $num) {
         if ($flag === true) {
             $num++;
         }
@@ -45,7 +56,7 @@ class Account_project {
     }
 
     // メッセージの内容を決める
-    public static function decide_message_by_num ($update_num, $create_num, $message, $other_message) {
+    public static function decide_message_by_num (int $update_num, int $create_num, string $message, string $other_message) {
         if ($update_num === 0 && $create_num !== 0) {
             return $other_message;
         } else {
@@ -64,13 +75,13 @@ class Account_project {
     }
 
     // comma区切りのデータを配列にして返す
-    public static function explode_data_by_commma($data) {
+    public static function explode_data_by_commma(string $data) {
         return explode(',', $data);
     }
 
     // viewへ渡すための年数のデータを返す関数
-    public static function get_years_for_selected_by_users($start, $end) {
-        $years = array();
+    public static function get_years_for_selected_by_users(int $start, int $end) {
+        $years = [];
         for ($i = $start; $i <= $end; $i++) {
             $years[] = (string) $i;
         }
@@ -78,11 +89,19 @@ class Account_project {
     }
     // viewへ渡すための月のデータを返す関数
     public static function get_months_for_selected_by_users() {
-        $months = array();
+        $months = [];
         for ($i = 1; $i < 13; $i++) {
             $months[] = sprintf('%02d', $i);
         }
         return $months;
+    }
+    // viewへ渡すための月のデータを返す関数
+    public static function get_day_for_selected_by_users(int $last) {
+        $days = [];
+        for ($i = 1; $i <= $last; $i++) {
+            $days[] = sprintf('%02d', $i);
+        }
+        return $days;
     }
 
     // YYYYmmをYYYY/mmで返す
@@ -113,18 +132,29 @@ class Account_project {
         return $return_value;
     }
 
-    public static function decide_message_by_return ($return, $message, $other_message) {
+    public static function decide_message_by_return (int $return, string $message, string $other_message) {
         if ($return === 1) {
             return $message;
         } else {
             return $other_message;
         }
     }
-    public static function decide_message_by_flag ($flag, $message, $other_message) {
+    public static function decide_message_by_flag (bool $flag, string $message, string $other_message) {
         if ($flag === true) {
             return $message;
         } else {
             return $other_message;
+        }
+    }
+    // モバイルか否か判定。pcならtrue、モバイルならfalse
+    public static function decide_device ($request) {
+        $device =  $request->header('User-Agent');
+        if ((strpos($device, 'iPhone') !== false)
+            || (strpos($device, 'iPod') !== false)
+            || (strpos($device, 'Android') !== false)) {
+            return false;
+        } else {
+            return true;
         }
     }
 

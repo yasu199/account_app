@@ -35,8 +35,8 @@ class ComparePaymentController extends Controller
           }
 
           // formに必要な月、年をセット
-          $tmp_year = array();
-          $tmp_month = array();
+          $tmp_year = [];
+          $tmp_month = [];
           // 始まりの年は2018年から
           $now_year  = date('Y');
           $now_year  = (int) $now_year;
@@ -50,8 +50,8 @@ class ComparePaymentController extends Controller
           $budget_db  = new Budget();
           $payment_db = new Payment();
           // データ格納用の配列
-          $tmp_budget  = array();
-          $tmp_payment = array();
+          $tmp_budget  = [];
+          $tmp_payment = [];
           foreach ($all_genres as $value) {
               $selected_date = $selected_year . $selected_month;
               $genre_id      = (int) $value->genre_id;
@@ -75,9 +75,9 @@ class ComparePaymentController extends Controller
                           ->get();
           }
           // budget,paymentについて、viewに渡すデータのゼロ埋めと、渡すデータの配列を取得
-          $budget     = array();
-          $payment    = array();
-          $genre_name = array();
+          $budget     = [];
+          $payment    = [];
+          $genre_name = [];
           foreach($all_genres as $value) {
               $budget[]  = 0;
               $payment[] = 0;
@@ -118,8 +118,11 @@ class ComparePaymentController extends Controller
           } else {
               $message = true;
           }
+
+          // デバイスが何か判定。PC→true、スマホ→FALSE
+          $device = Account_project::decide_device ($request);
           // 画面へ変数を渡し、表示
-          return view('compare_payment.compare_payment', compact('selected_date', 'selected_year', 'selected_month', 'budget', 'payment', 'genre_name','exit_budget', 'exit_payment', 'tmp_year', 'tmp_month', 'message'));
+          return view('compare_payment.compare_payment', compact('selected_date', 'selected_year', 'selected_month', 'budget', 'payment', 'genre_name','exit_budget', 'exit_payment', 'tmp_year', 'tmp_month', 'message', 'device'));
       }
 
       // ユーザからの入力値を取得し、渡すためだけ関数
@@ -127,7 +130,7 @@ class ComparePaymentController extends Controller
           $selected_year  = $request->selected_year;
           $selected_month = $request->selected_month;
 
-          $to_page_view_controller = array($selected_year, $selected_month);
+          $to_page_view_controller = [$selected_year, $selected_month];
           return redirect()->action('ComparePaymentController@page_vies', $to_page_view_controller);
       }
 }

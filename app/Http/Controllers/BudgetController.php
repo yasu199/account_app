@@ -107,6 +107,10 @@ class BudgetController extends Controller
         // updateの処理を実行
         // foreach文で予算の配列データを順番にupdate
         foreach($budget as $key=>$value) {
+            // もしvalueがnullのときは0円にして入力
+            if ($value === null) {
+                $value = 0;
+            }
             // updateされたときにtrueになるフラグ
             $update_flag = false;
             // createされたときにtrueになるフラグ

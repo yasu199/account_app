@@ -27,14 +27,24 @@ class PaymentController extends Controller
         // ユーザ特定のため、ユーザIDを取得
         // ログイン確認はルーティングに記載（Authミドルウェアを使用）
         $user_id = Auth::id();
+        // 日付データが渡されてるか
+        if (isset($request->selected_date) === true) {
+            $selected_date  = $request->selected_date;
+            $selected_year  = Account_project::get_year($selected_date);
+            $selected_month = Account_project::get_month($selected_date);
+            $selected_day   = Account_project::get_day($selected_date);
+        } else {
+            $selected_year  = date('Y');
+            $selected_month = date('m');
+            $selected_day   = date('d');
+        }
         // 基本的に表示は当日日付で表示
         $now_year  = date('Y');
         $int_year  = (int) $now_year;
-        $now_month = date('m');
         // htmlへ渡す用に、年月の格納用配列を用意
-        $tmp_year  = array();
+        $tmp_year  = [];
         $last_year = $int_year - 1;
-        $tmp_month = array();
+        $tmp_month = [];
         // 年については昨年から、先の１０年間
         $tmp_year  = Account_project::get_years_for_selected_by_users($last_year, $last_year + 11);
         $tmp_month = Account_project::get_months_for_selected_by_users();
@@ -48,7 +58,7 @@ class PaymentController extends Controller
                             ->get();
 
         // 画面へ変数を渡し画面を表示
-        return view('payment.variable_payment', compact('tmp_year', 'tmp_month', 'now_year', 'now_month', 'variable_payment'));
+        return view('payment.variable_payment', compact('tmp_year', 'tmp_month', 'variable_payment', 'selected_year', 'selected_month'));
     }
 
     public function fixed_index(Request $request) {
@@ -68,9 +78,9 @@ class PaymentController extends Controller
         $now_year = date('Y');
         $now_year = (int) $now_year;
         // htmlへ渡す用に、年月の格納用配列を用意
-        $tmp_year  = array();
+        $tmp_year  = [];
         $last_year = $now_year - 1;
-        $tmp_month = array();
+        $tmp_month = [];
         // 年については昨年から、先の１０年間
         $tmp_year  = Account_project::get_years_for_selected_by_users($last_year, $last_year + 11);
         $tmp_month = Account_project::get_months_for_selected_by_users();
@@ -152,10 +162,12 @@ class PaymentController extends Controller
         $fail_create_message = $false_num . '件の支払登録に失敗しました。登録された支払データを確認してください。';
 
         $message = Account_project::decide_message_by_flag($message_flag, $create_message, $fail_create_message);
+        // viewへ渡すデータ
+        $date = ['selected_date' => $selected_date];
         // $messageをrequestへ保存
         $request->session()->flash('message', $message);
         return redirect()->action(
-              'PaymentController@variable_index'
+              'PaymentController@variable_index', $date
           );
     }
 
@@ -214,7 +226,7 @@ class PaymentController extends Controller
       // $messageをrequestへ保存
       $request->session()->flash('message', $message);
       // 画面表示用コントローラへ渡すパラメータ
-      $selected_date = array('selected_year' => $selected_year, 'selected_month' => $selected_month);
+      $selected_date = ['selected_year' => $selected_year, 'selected_month' => $selected_month];
       return redirect()->action(
             'PaymentController@fixed_index', $selected_date
         );
@@ -229,7 +241,7 @@ class PaymentController extends Controller
       // $messageをrequestへ保存
       $message = $selected_year . '年' . $selected_month . '月の支払データ編集ができます。';
       $request->session()->flash('message', $message);
-      $selected_date = array('selected_year' => $selected_year, 'selected_month' => $selected_month);
+      $selected_date = ['selected_year' => $selected_year, 'selected_month' => $selected_month];
       return redirect()->action(
             'PaymentController@fixed_index', $selected_date
         );

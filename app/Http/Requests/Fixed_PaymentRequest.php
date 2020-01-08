@@ -14,7 +14,7 @@ class Fixed_PaymentRequest extends FormRequest
     public function rules()
     {
         return [
-            'payment.*' => 'integer|between: 0, 100000000',
+            'payment.*' => 'nullable|integer|between: 0, 100000000',
             'memo.*' => 'max:10|inputMemo',
         ];
     }

@@ -70,6 +70,7 @@ function circle_chart(elm, genre_name, inp_data, year, month, title) {
             datasets: inp_data,
         },
         options: {
+            maintainAspectRatio: false,
             title: {
                 display: true,
                 text: title + '(' + year + '年' + month + '月)'
@@ -101,6 +102,7 @@ function bar_chart(elm, genre_name, payment_data, year, month, title) {
             datasets: payment_data,
         },
         options: {
+            maintainAspectRatio: false,
             title: {
                 display: true,
                 text: title + '(' + year + '年' + month + '月)'

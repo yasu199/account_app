@@ -45,13 +45,16 @@ class IndexPaymentController extends Controller
           }
           // 日付の選択用にデータをセット
           // formに必要な月、年をセット
-          $tmp_year = array();
-          $tmp_month = array();
+          $last_day  = (int) Account_project::get_end_of_month($selected_year, $selected_month);
+          $tmp_year  = [];
+          $tmp_month = [];
+          $tmp_day   = [];
           // 始まりの年は2018年から
           $now_year  = date('Y');
           $now_year  = (int) $now_year;
           $tmp_year  = Account_project::get_years_for_selected_by_users(2018, $now_year + 10);
           $tmp_month = Account_project::get_months_for_selected_by_users();
+          $tmp_day   = Account_project::get_day_for_selected_by_users($last_day);
 
           // すべてのジャンル名とidを取得
           $gerne_db = new Genre();
@@ -82,7 +85,7 @@ class IndexPaymentController extends Controller
                                 ->get();
           }
 
-          return view('index_payment.index_payment', compact('payment_data', 'selected_year', 'selected_month', 'sort_flag', 'all_genres', 'tmp_year', 'tmp_month'));
+          return view('index_payment.index_payment', compact('payment_data', 'selected_year', 'selected_month', 'sort_flag', 'all_genres', 'tmp_year', 'tmp_month', 'tmp_day'));
       }
 
       public function select_date(IndexPaymentDateRequest $request) {
@@ -90,7 +93,7 @@ class IndexPaymentController extends Controller
           $selected_year       = $request->selected_year;
           $selected_month      = $request->selected_month;
           $sort_flag           = $request->sort_flag;
-          $to_index_controller = array($selected_year, $selected_month, $sort_flag);
+          $to_index_controller = [$selected_year, $selected_month, $sort_flag];
           return redirect()->action('IndexPaymentController@index', $to_index_controller);
       }
 
@@ -99,7 +102,7 @@ class IndexPaymentController extends Controller
           $selected_year       = $request->selected_year;
           $selected_month      = $request->selected_month;
           $sort_flag           = $request->sort_flag;
-          $to_index_controller = array($selected_year, $selected_month, $sort_flag);
+          $to_index_controller = [$selected_year, $selected_month, $sort_flag];
           return redirect()->action('IndexPaymentController@index', $to_index_controller);
       }
 
@@ -140,7 +143,7 @@ class IndexPaymentController extends Controller
           // $messageをrequestへ保存
           $request->session()->flash('message', $message);
 
-          $to_index_controller = array($payment_year, $payment_month, $sort_flag);
+          $to_index_controller = [$payment_year, $payment_month, $sort_flag];
           return redirect()->action('IndexPaymentController@index', $to_index_controller);
       }
 
@@ -163,7 +166,7 @@ class IndexPaymentController extends Controller
           $message = Account_project::decide_message_by_return($delete_return, $delete_message, $fail_delete_message);
           // $messageをrequestへ保存
           $request->session()->flash('message', $message);
-          $to_index_controller = array($selected_year, $selected_month, $sort_flag);
+          $to_index_controller = [$selected_year, $selected_month, $sort_flag];
           return redirect()->action('IndexPaymentController@index', $to_index_controller);
       }
 }
