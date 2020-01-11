@@ -41,14 +41,16 @@ class PaymentController extends Controller
         // 基本的に表示は当日日付で表示
         $now_year  = date('Y');
         $int_year  = (int) $now_year;
+        $last_day  = (int) Account_project::get_end_of_month($selected_year, $selected_month);
         // htmlへ渡す用に、年月の格納用配列を用意
         $tmp_year  = [];
         $last_year = $int_year - 1;
         $tmp_month = [];
+        $tmp_day = [];
         // 年については昨年から、先の１０年間
         $tmp_year  = Account_project::get_years_for_selected_by_users($last_year, $last_year + 11);
         $tmp_month = Account_project::get_months_for_selected_by_users();
-
+        $tmp_day   = Account_project::get_day_for_selected_by_users($last_day);
         // ジャンルを取得
         $genre_db = new Genre;
         $variable_payment = $genre_db
@@ -58,7 +60,7 @@ class PaymentController extends Controller
                             ->get();
 
         // 画面へ変数を渡し画面を表示
-        return view('payment.variable_payment', compact('tmp_year', 'tmp_month', 'variable_payment', 'selected_year', 'selected_month'));
+        return view('payment.variable_payment', compact('tmp_year', 'tmp_month', 'tmp_day', 'variable_payment', 'selected_year', 'selected_month','selected_day'));
     }
 
     public function fixed_index(Request $request) {

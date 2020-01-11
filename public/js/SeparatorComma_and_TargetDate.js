@@ -47,7 +47,10 @@ function targetDay() {
     const month = document.getElementById('month').value;
 
     // 入力した日の取得
-    const inp_day = Number(document.getElementById('day').value);
+    let inp_day = Number(document.getElementById('day').value);
+    if (inp_day === 0) {
+      inp_day = Number(document.getElementById('selected_day').dataset.val);
+    }
     // 日の部分を変数的に挿入するHTML
     let html = '';
     // 年月が有効な値か確認
@@ -76,12 +79,12 @@ function targetDay() {
 
 
 window.onload = function() {
-  targetDay();
+  // targetDay();
   document.getElementById('year').addEventListener('change', targetDay);
   document.getElementById('month').addEventListener('change', targetDay);
   // リダイレクトした際に元の入力値を復元
-  const dayElem = document.getElementById('day');
-  dayElem.value = dayElem.getAttribute('data-old-value');
+  // const dayElem = document.getElementById('day');
+  // dayElem.value = dayElem.getAttribute('data-old-value');
 
   // 処理をするタイミングをイベント処理する
   // separator_conma:コンマ区切りにする

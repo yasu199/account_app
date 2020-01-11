@@ -5,10 +5,10 @@
 @section('css')
     <link href="{{url('css/base.css')}}" rel="stylesheet" type="text/css">
     <link href="https://use.fontawesome.com/releases/v5.0.8/css/all.css" rel="stylesheet">
-
 @endsection
 @section('content')
-    <div class="left-margin">
+    <!-- <div class="left-margin container"> -->
+    <div class="container">
         @if (count($errors) > 0)
             <div class="alert alert-danger">
                 <p>入力エラーがあります。</P>
@@ -39,7 +39,7 @@
                 <!-- yearはコントローラ側で配列にする。マージンは一年 -->
                 @if (old('year') === null)
                     @foreach($tmp_year as $value)
-                        @if ($value === $now_year)
+                        @if ($value === $selected_year)
                             <option value="{{$value}}" selected>{{$value}}</option>
                         @else
                             <option value="{{$value}}">{{$value}}</option>
@@ -60,7 +60,7 @@
             <select name="month" id="month">
                 @if (old('month') === null)
                     @foreach($tmp_month as $value)
-                        @if ($value === $now_month)
+                        @if ($value === $selected_month)
                             <option value="{{$value}}" selected>{{$value}}</option>
                         @else
                             <option value="{{$value}}">{{$value}}</option>
@@ -77,8 +77,36 @@
                 @endif
             </select>
             <label for="month">月</label>
-
-            <select name="day" id="day" data-old-value="{{old('day')}}"></select>
+            <div type="hidden" id="selected_day" style="display:none;" data-val="{{$selected_day}}"></div>
+            <!-- <select name="day" id="day" data-old-value="{{old('day')}}"> -->
+            <select name="day" id="day">
+                @if (old('day') === null)
+                    @foreach($tmp_day as $value)
+                        @if ($value === $selected_day)
+                            <option value="{{$value}}" selected>{{$value}}</option>
+                        @else
+                            <option value="{{$value}}">{{$value}}</option>
+                        @endif
+                    @endforeach
+                @else
+                    <!-- 自作関数の読み込み -->
+                    @inject('account_project', 'App\Library\Account_project')
+                    @php
+                        $old_year  = old('year');
+                        $old_month = old('month');
+                        $old_day   = old('day');
+                        $last_day  = (int) $account_project->get_end_of_month($old_year, $old_month);
+                        $tmp_day   = $account_project->get_day_for_selected_by_users($last_day);
+                    @endphp
+                    @foreach($tmp_day as $value)
+                        @if ($value === $old_day)
+                            <option value="{{$value}}" selected>{{$value}}</option>
+                        @else
+                            <option value="{{$value}}">{{$value}}</option>
+                        @endif
+                    @endforeach
+                @endif
+            </select>
             <label for="day">日</label>
 
             <!-- 変動費の入力 -->
@@ -101,7 +129,7 @@
                             @else
                                 <input id="numdata{{$i}}" type="text" name="payment[{{$value->genre_id}}]" value="0">
                             @endif
-                            <label>メモ</label>
+                            <label class="label-memo">メモ</label>
                             @if (old('memo') !== null)
                                 <input type="text" name="memo[{{$value->genre_id}}]" value="{{old('memo')[$value->genre_id]}}">
                             @else
@@ -118,7 +146,7 @@
             </div>
         </form>
     </div>
-@endsection
-@section('js')
-    <script src="{{url('js/SeparatorComma_and_TargetDate.js')}}"></script>
+    @section('js')
+      <script src="{{url('js/SeparatorComma_and_TargetDate.js')}}"></script>
+    @endsection
 @endsection
